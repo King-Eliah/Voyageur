@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Voyageur",
+    "slug": "trip-planner-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon":"./assets/images/logo.png",
+    "splash": {
+      "image":"./assets/images/logo.png"
+    },
+    "scheme": "tripplanner",
+    "userInterfaceStyle": "automatic",
+    "jsEngine": "jsc",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tripplanner.app",
+      "jsEngine": "jsc"
+    },
+    "android": {
+      "package": "com.tripplanner.app",
+      "jsEngine": "jsc"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser",
+      "expo-image-picker",
+      "expo-location",
+      "expo-calendar"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
