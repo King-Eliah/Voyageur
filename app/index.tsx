@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -34,14 +34,14 @@ export default function SplashScreen() {
   }, [isAuthenticated]);
 
   return (
-    <View style={[styles.container, { backgroundColor: '#FFFFFFF' }]}>
+    <View style={[styles.container, { backgroundColor: colors.background}]}>
       {/* Logo Image */}
       <Image
         source={require('../assets/images/logo.png')} 
         style={styles.logo}
         resizeMode="contain"
       />
-      <ActivityIndicator size="large" color="#008080" style={styles.loader} />
+      
     </View>
   );
 }
@@ -53,9 +53,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 320,
-    height: 320,
-    marginBottom: 2,
+    width: 340,
+    height: 340,
+   
   },
   title: {
     fontSize: 22,
@@ -69,7 +69,5 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     marginBottom: 40,
   },
-  loader: {
-    marginTop: 20,
-  },
+ 
 });
