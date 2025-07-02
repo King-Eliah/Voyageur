@@ -10,7 +10,7 @@ const { width } = Dimensions.get('window');
 
 export default function ExploreScreen() {
   const { colors } = useTheme();
-  const { addSavedItem, removeSavedItem, isItemSaved } = useData();
+  const { savedItems, addSavedItem, removeSavedItem, isItemSaved } = useData();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -23,7 +23,7 @@ export default function ExploreScreen() {
 
   const featuredDestinations = [
     {
-      id: '1',
+      id: 'featured-1',
       title: 'Santorini, Greece',
       image: 'https://images.pexels.com/photos/161815/santorini-oia-greece-water-161815.jpeg?auto=compress&cs=tinysrgb&w=400',
       rating: 4.9,
@@ -31,7 +31,7 @@ export default function ExploreScreen() {
       description: 'Stunning sunsets and white architecture',
     },
     {
-      id: '2',
+      id: 'featured-2',
       title: 'Kyoto, Japan',
       image: 'https://images.pexels.com/photos/402028/pexels-photo-402028.jpeg?auto=compress&cs=tinysrgb&w=400',
       rating: 4.8,
@@ -39,7 +39,7 @@ export default function ExploreScreen() {
       description: 'Ancient temples and cherry blossoms',
     },
     {
-      id: '3',
+      id: 'featured-3',
       title: 'Machu Picchu, Peru',
       image: 'https://images.pexels.com/photos/259967/pexels-photo-259967.jpeg?auto=compress&cs=tinysrgb&w=400',
       rating: 4.9,
@@ -50,28 +50,28 @@ export default function ExploreScreen() {
 
   const popularThisWeek = [
     {
-      id: '1',
+      id: 'popular-1',
       title: 'Bali, Indonesia',
       image: 'https://images.pexels.com/photos/2166553/pexels-photo-2166553.jpeg?auto=compress&cs=tinysrgb&w=300',
       rating: 4.7,
       price: '$199',
     },
     {
-      id: '2',
+      id: 'popular-2',
       title: 'Dubai, UAE',
       image: 'https://images.pexels.com/photos/162031/dubai-tower-arab-khalifa-162031.jpeg?auto=compress&cs=tinysrgb&w=300',
       rating: 4.6,
       price: '$449',
     },
     {
-      id: '3',
+      id: 'popular-3',
       title: 'Maldives',
       image: 'https://images.pexels.com/photos/1287460/pexels-photo-1287460.jpeg?auto=compress&cs=tinysrgb&w=300',
       rating: 4.9,
       price: '$799',
     },
     {
-      id: '4',
+      id: 'popular-4',
       title: 'Iceland',
       image: 'https://images.pexels.com/photos/1433052/pexels-photo-1433052.jpeg?auto=compress&cs=tinysrgb&w=300',
       rating: 4.8,
@@ -81,21 +81,21 @@ export default function ExploreScreen() {
 
   const recommendedForYou = [
     {
-      id: '1',
+      id: 'recommended-1',
       title: 'Swiss Alps',
       image: 'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=300',
       rating: 4.9,
       price: '$599',
     },
     {
-      id: '2',
+      id: 'recommended-2',
       title: 'Tuscany, Italy',
       image: 'https://images.pexels.com/photos/1701595/pexels-photo-1701595.jpeg?auto=compress&cs=tinysrgb&w=300',
       rating: 4.7,
       price: '$399',
     },
     {
-      id: '3',
+      id: 'recommended-3',
       title: 'Norwegian Fjords',
       image: 'https://images.pexels.com/photos/1559821/pexels-photo-1559821.jpeg?auto=compress&cs=tinysrgb&w=300',
       rating: 4.8,
@@ -125,7 +125,7 @@ export default function ExploreScreen() {
       id: item.id,
       type,
       title: item.title,
-      location: item.title, // Using title as location for simplicity
+      location: item.title,
       image: item.image,
       rating: item.rating,
       price: parseInt(item.price?.replace('$', '') || '0'),
@@ -150,7 +150,7 @@ export default function ExploreScreen() {
         price: item.price.replace('$', ''),
         currency: '$',
         rating: String(item.rating),
-        location: item.title, // Using title as location for simplicity
+        location: item.title,
         type: 'destination',
         description: item.description || 'Popular destination with great reviews',
         highlights: JSON.stringify([
@@ -193,6 +193,21 @@ export default function ExploreScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Explore</Text>
+          <TouchableOpacity 
+            style={styles.favoritesButton}
+            onPress={() => router.push('/explore/favorites')}
+          >
+            <Heart 
+              size={24} 
+              color={colors.primary} 
+              fill={colors.primary}
+            />
+            {savedItems.length > 0 && (
+              <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                <Text style={styles.badgeText}>{savedItems.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
@@ -388,6 +403,25 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
+  favoritesButton: {
+    position: 'relative',
+    padding: 8,
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -396,7 +430,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
-   
   },
   searchInput: {
     flex: 1,

@@ -1,6 +1,6 @@
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useData } from '@/contexts/DataContext';
+import { useData } from '@/contexts/DataContext'; // Added useData
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Car, 
@@ -50,7 +50,7 @@ interface CarRental {
 
 export default function CarsScreen() {
   const { colors } = useTheme();
-  const { addBooking } = useData();
+  const { addBooking, addSavedItem, removeSavedItem, isItemSaved } = useData(); // Added favorites functions
   const router = useRouter();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,7 +63,7 @@ export default function CarsScreen() {
   // Enhanced mock car rental data
   const carRentals: CarRental[] = [
     {
-      id: '1',
+      id: 'car-1',
       name: 'Tesla Model 3',
       model: '2024',
       image: 'https://images.pexels.com/photos/1007410/pexels-photo-1007410.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -87,7 +87,7 @@ export default function CarsScreen() {
       description: 'Experience the future of driving with Tesla\'s most popular electric sedan'
     },
     {
-      id: '2',
+      id: 'car-2',
       name: 'BMW X5',
       model: '2024',
       image: 'https://images.pexels.com/photos/244206/pexels-photo-244206.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -111,7 +111,7 @@ export default function CarsScreen() {
       description: 'Premium luxury SUV perfect for family trips and business travel'
     },
     {
-      id: '3',
+      id: 'car-3',
       name: 'Toyota Camry',
       model: '2024',
       image: 'https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -135,7 +135,7 @@ export default function CarsScreen() {
       description: 'Reliable and fuel-efficient sedan perfect for city driving and road trips'
     },
     {
-      id: '4',
+      id: 'car-4',
       name: 'Honda CR-V',
       model: '2024',
       image: 'https://images.pexels.com/photos/1118448/pexels-photo-1118448.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -159,7 +159,7 @@ export default function CarsScreen() {
       description: 'Versatile hybrid SUV combining efficiency with practicality'
     },
     {
-      id: '5',
+      id: 'car-5',
       name: 'Ford Mustang',
       model: '2024',
       image: 'https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -233,6 +233,25 @@ export default function CarsScreen() {
     }
   };
 
+  // Added favorite toggle function
+  const handleToggleFavorite = async (car: CarRental) => {
+    const savedItem = {
+      id: car.id,
+      type: 'attraction' as const,
+      title: `${car.name} ${car.model}`,
+      location: car.pickupLocation,
+      image: car.image,
+      rating: car.rating,
+      price: car.pricePerDay
+    };
+
+    if (isItemSaved(car.id)) {
+      await removeSavedItem(car.id);
+    } else {
+      await addSavedItem(savedItem);
+    }
+  };
+
 const renderCarCard = (car: CarRental) => {
   const hasDiscount = car.originalPrice && car.originalPrice > car.pricePerDay;
   const days = Math.ceil((dropoffDate.getTime() - pickupDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -296,8 +315,16 @@ const renderCarCard = (car: CarRental) => {
             </View>
           )}
 
-          <TouchableOpacity style={styles.favoriteButton}>
-            <Heart size={16} color="white" />
+          {/* Updated favorite button */}
+          <TouchableOpacity 
+            style={styles.favoriteButton}
+            onPress={() => handleToggleFavorite(car)}
+          >
+            <Heart 
+              size={16} 
+              color={isItemSaved(car.id) ? '#EF4444' : 'white'} 
+              fill={isItemSaved(car.id) ? '#EF4444' : 'transparent'}
+            />
           </TouchableOpacity>
         </View>
 
@@ -682,8 +709,8 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     paddingLeft: 20,
-    paddingBottom:10,
-    paddingTop:10
+    paddingBottom: 10,
+    paddingTop: 10
   },
   categoryCard: {
     alignItems: 'center',
@@ -866,7 +893,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontStyle: 'italic',
   },
-  hotelFooter: {
+  carFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -893,11 +920,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+    
   },
   bookButtonText: {
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+    
+
   },
   emptyState: {
     alignItems: 'center',

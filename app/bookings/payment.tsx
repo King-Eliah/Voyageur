@@ -485,7 +485,7 @@ export default function PaymentScreen() {
 
         {/* Payment History */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Transactions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>     Recent Transactions</Text>
           <View style={[styles.historyContainer, { backgroundColor: colors.card }]}>
             {paymentHistory.map((transaction, index) => (
               <View key={transaction.id}>

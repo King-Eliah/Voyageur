@@ -1,5 +1,6 @@
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Image, TextInput } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useData } from '@/contexts/DataContext'; // Added useData
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Camera, 
@@ -46,6 +47,7 @@ interface Activity {
 
 export default function ActivitiesScreen() {
   const { colors } = useTheme();
+  const { addSavedItem, removeSavedItem, isItemSaved } = useData(); // Added favorites functions
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -53,7 +55,7 @@ export default function ActivitiesScreen() {
   // Mock activities data
   const activities: Activity[] = [
     {
-      id: '1',
+      id: 'activity-1',
       title: 'City Walking Tour',
       description: 'Explore the historic downtown area with a knowledgeable local guide',
       image: 'https://images.pexels.com/photos/2363/france-landmark-lights-night.jpg?auto=compress&cs=tinysrgb&w=400',
@@ -74,7 +76,7 @@ export default function ActivitiesScreen() {
       discount: 29
     },
     {
-      id: '2',
+      id: 'activity-2',
       title: 'Mountain Hiking Adventure',
       description: 'Challenge yourself with breathtaking mountain trails and scenic viewpoints',
       image: 'https://images.pexels.com/photos/618848/pexels-photo-618848.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -93,7 +95,7 @@ export default function ActivitiesScreen() {
       featured: false
     },
     {
-      id: '3',
+      id: 'activity-3',
       title: 'Sunset Boat Cruise',
       description: 'Relax on a beautiful boat ride while watching the sunset over the water',
       image: 'https://images.pexels.com/photos/1001682/pexels-photo-1001682.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -112,7 +114,7 @@ export default function ActivitiesScreen() {
       featured: true
     },
     {
-      id: '4',
+      id: 'activity-4',
       title: 'Cooking Class Experience',
       description: 'Learn to cook authentic local dishes with a professional chef',
       image: 'https://images.pexels.com/photos/2284166/pexels-photo-2284166.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -131,7 +133,7 @@ export default function ActivitiesScreen() {
       featured: false
     },
     {
-      id: '5',
+      id: 'activity-5',
       title: 'Museum Art Tour',
       description: 'Discover masterpieces with an expert art historian guide',
       image: 'https://images.pexels.com/photos/1040422/pexels-photo-1040422.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -152,7 +154,7 @@ export default function ActivitiesScreen() {
       discount: 25
     },
     {
-      id: '6',
+      id: 'activity-6',
       title: 'Zip Line Canopy Tour',
       description: 'Soar through the treetops on an exhilarating zip line adventure',
       image: 'https://images.pexels.com/photos/618833/pexels-photo-618833.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -193,6 +195,26 @@ export default function ActivitiesScreen() {
         return colors.textSecondary;
     }
   };
+
+  // Added favorite toggle function
+  const handleToggleFavorite = async (activity: Activity) => {
+    const savedItem = {
+      id: activity.id,
+      type: 'attraction' as const,
+      title: activity.title,
+      location: activity.location,
+      image: activity.image,
+      rating: activity.rating,
+      price: activity.price
+    };
+
+    if (isItemSaved(activity.id)) {
+      await removeSavedItem(activity.id);
+    } else {
+      await addSavedItem(savedItem);
+    }
+  };
+
 const renderActivityCard = (activity: Activity) => {
   const hasDiscount = activity.originalPrice && activity.originalPrice > activity.price;
   
@@ -237,8 +259,16 @@ const renderActivityCard = (activity: Activity) => {
             </View>
           )}
 
-          <TouchableOpacity style={styles.favoriteButton}>
-            <Heart size={16} color="white" />
+          {/* Updated favorite button */}
+          <TouchableOpacity 
+            style={styles.favoriteButton}
+            onPress={() => handleToggleFavorite(activity)}
+          >
+            <Heart 
+              size={16} 
+              color={isItemSaved(activity.id) ? '#EF4444' : 'white'} 
+              fill={isItemSaved(activity.id) ? '#EF4444' : 'transparent'}
+            />
           </TouchableOpacity>
         </View>
 

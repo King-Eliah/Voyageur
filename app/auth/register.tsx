@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,46 +18,51 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
-  
+
   const router = useRouter();
-  const { register, loginWithGoogle, loginWithFacebook } = useAuth();
+  const { register, loginWithGoogle, isAuthenticated } = useAuth();
   const { colors } = useTheme();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated]);
 
   const validateForm = () => {
     const newErrors: any = {};
-    
+
     if (!formData.firstName) newErrors.firstName = 'First name is required';
     if (!formData.lastName) newErrors.lastName = 'Last name is required';
-    
+
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleRegister = async () => {
     if (!validateForm()) return;
-    
+
     setLoading(true);
     try {
       await register(formData.email, formData.password, formData.firstName, formData.lastName);
-      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Registration Failed', 'Please try again');
     } finally {
@@ -68,18 +73,8 @@ export default function Register() {
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
-      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Registration Failed', 'Google registration failed');
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    try {
-      await loginWithFacebook();
-      router.replace('/(tabs)');
-    } catch (error) {
-      Alert.alert('Registration Failed', 'Facebook registration failed');
     }
   };
 
@@ -92,19 +87,16 @@ export default function Register() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <ArrowLeft size={24} color={colors.text} />
       </TouchableOpacity>
-      
+
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Join us and start planning your next adventure
         </Text>
-        
+
         <View style={styles.form}>
           <View style={styles.row}>
             <View style={[styles.inputContainer, styles.halfWidth]}>
@@ -120,7 +112,7 @@ export default function Register() {
               />
               {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
             </View>
-            
+
             <View style={[styles.inputContainer, styles.halfWidth]}>
               <TextInput
                 style={[
@@ -135,7 +127,7 @@ export default function Register() {
               {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
             </View>
           </View>
-          
+
           <View style={styles.inputContainer}>
             <TextInput
               style={[
@@ -151,7 +143,7 @@ export default function Register() {
             />
             {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
-          
+
           <View style={styles.inputContainer}>
             <View style={styles.passwordContainer}>
               <TextInput
@@ -165,20 +157,13 @@ export default function Register() {
                 onChangeText={(value) => updateFormData('password', value)}
                 secureTextEntry={!showPassword}
               />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff size={20} color={colors.textSecondary} />
-                ) : (
-                  <Eye size={20} color={colors.textSecondary} />
-                )}
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff size={20} color={colors.textSecondary} /> : <Eye size={20} color={colors.textSecondary} />}
               </TouchableOpacity>
             </View>
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
-          
+
           <View style={styles.inputContainer}>
             <View style={styles.passwordContainer}>
               <TextInput
@@ -192,56 +177,29 @@ export default function Register() {
                 onChangeText={(value) => updateFormData('confirmPassword', value)}
                 secureTextEntry={!showConfirmPassword}
               />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff size={20} color={colors.textSecondary} />
-                ) : (
-                  <Eye size={20} color={colors.textSecondary} />
-                )}
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                {showConfirmPassword ? <EyeOff size={20} color={colors.textSecondary} /> : <Eye size={20} color={colors.textSecondary} />}
               </TouchableOpacity>
             </View>
             {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
           </View>
-          
-          <TouchableOpacity
-            style={[styles.registerButton, { backgroundColor: colors.primary }]}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.registerButtonText}>Create Account</Text>
-            )}
+
+          <TouchableOpacity style={[styles.registerButton, { backgroundColor: colors.primary }]} onPress={handleRegister} disabled={loading}>
+            {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.registerButtonText}>Create Account</Text>}
           </TouchableOpacity>
-          
+
           <View style={styles.divider}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or</Text>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
-          
-          <TouchableOpacity
-            style={[styles.socialButton, { borderColor: colors.border }]}
-            onPress={handleGoogleLogin}
-          >
+
+          <TouchableOpacity style={[styles.socialButton, { borderColor: colors.border }]} onPress={handleGoogleLogin}>
             <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Google</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.socialButton, { borderColor: colors.border }]}
-            onPress={handleFacebookLogin}
-          >
-            <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Facebook</Text>
-          </TouchableOpacity>
-          
+
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-              Already have an account?{' '}
-            </Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Already have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/login')}>
               <Text style={[styles.footerLink, { color: colors.primary }]}>Sign In</Text>
             </TouchableOpacity>

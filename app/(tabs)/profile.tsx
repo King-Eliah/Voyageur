@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -6,12 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CreditCard as Edit3, Settings, Bell, CircleHelp as HelpCircle, Info, CreditCard, LogOut, MapPin, Calendar, Star, ChevronRight, ChartBar as BarChart3, Camera } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { useData } from '@/contexts/DataContext';
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const { user, logout, updateUser } = useAuth();
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
+  const { trips } = useData();
 
   const handleLogout = () => {
     Alert.alert(
@@ -31,69 +33,104 @@ export default function ProfileScreen() {
     );
   };
 
+  // Calculate stats dynamically from trips data
+  const stats = useMemo(() => {
+    const tripsCompleted = trips.filter(trip => trip.status === 'completed').length;
+    
+    const reviewsWritten = trips.reduce(
+      (count, trip) => count + (trip.review ? 1 : 0),
+      0
+    );
+    
+    const countriesVisited = [
+      ...new Set(
+        trips
+          .filter(trip => trip.status === 'completed')
+          .map(trip => trip.destination)
+      )
+    ].length;
+
+    return [
+      {
+        id: '1',
+        title: 'Countries Visited',
+        value: countriesVisited,
+        icon: MapPin,
+        color: '#3B82F6',
+      },
+      {
+        id: '2',
+        title: 'Trips Completed',
+        value: tripsCompleted,
+        icon: Calendar,
+        color: '#10B981',
+      },
+      {
+        id: '3',
+        title: 'Reviews Written',
+        value: reviewsWritten,
+        icon: Star,
+        color: '#F59E0B',
+      },
+    ];
+  }, [trips]);
+
   const pickImage = async () => {
-  try {
-    setIsUploading(true);
-    
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission required', 'We need access to your photos to upload a profile picture');
-      return;
+    try {
+      setIsUploading(true);
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'We need access to your photos to upload a profile picture');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        await updateUser({ profileImage: uri });
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
+  };
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+  const takePhoto = async () => {
+    try {
+      setIsUploading(true);
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'We need access to your camera to take a photo');
+        return;
+      }
 
-    console.log('Image picker result:', result); // Add this for debugging
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      console.log('Selected image URI:', uri); // Debug log
-      await updateUser({ profileImage: uri });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        await updateUser({ profileImage: uri });
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
-  } catch (error) {
-    console.error('Error picking image:', error);
-    Alert.alert('Error', 'Failed to select image. Please try again.');
-  } finally {
-    setIsUploading(false);
-  }
-};
+  };
 
-const takePhoto = async () => {
-  try {
-    setIsUploading(true);
-    
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission required', 'We need access to your camera to take a photo');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    console.log('Camera result:', result); // Add this for debugging
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      console.log('Captured image URI:', uri); // Debug log
-      await updateUser({ profileImage: uri });
-    }
-  } catch (error) {
-    console.error('Error taking photo:', error);
-    Alert.alert('Error', 'Failed to take photo. Please try again.');
-  } finally {
-    setIsUploading(false);
-  }
-};
   const showImagePickerOptions = () => {
     Alert.alert(
       'Update Profile Picture',
@@ -102,7 +139,6 @@ const takePhoto = async () => {
         {
           text: 'Take Photo',
           onPress: takePhoto,
-          icon: () => <Camera size={20} color={colors.primary} />,
         },
         {
           text: 'Choose from Library',
@@ -133,34 +169,41 @@ const takePhoto = async () => {
     },
     {
       id: '3',
+      title: 'My Reviews',
+      icon: Star,
+      onPress: () => router.push('/profile/reviews'),
+      color: colors.primary,
+    },
+    {
+      id: '4',
       title: 'Settings',
       icon: Settings,
       onPress: () => router.push('/profile/settings'),
       color: colors.textSecondary,
     },
     {
-      id: '4',
+      id: '5',
       title: 'Notifications',
       icon: Bell,
       onPress: () => router.push('/profile/notifications'),
       color: colors.textSecondary,
     },
     {
-      id: '5',
+      id: '6',
       title: 'Payment Methods',
       icon: CreditCard,
       onPress: () => router.push('/profile/payment'),
       color: colors.textSecondary,
     },
     {
-      id: '6',
+      id: '7',
       title: 'Help & Support',
       icon: HelpCircle,
       onPress: () => router.push('/profile/help'),
       color: colors.textSecondary,
     },
     {
-      id: '7',
+      id: '8',
       title: 'About',
       icon: Info,
       onPress: () => router.push('/profile/about'),
@@ -168,39 +211,13 @@ const takePhoto = async () => {
     },
   ];
 
-  const stats = [
-    {
-      id: '1',
-      title: 'Countries Visited',
-      value: user?.countriesVisited || 0,
-      icon: MapPin,
-      color: '#3B82F6',
-    },
-    {
-      id: '2',
-      title: 'Trips Completed',
-      value: user?.tripsCompleted || 0,
-      icon: Calendar,
-      color: '#10B981',
-    },
-    {
-      id: '3',
-      title: 'Reviews Written',
-      value: 24,
-      icon: Star,
-      color: '#F59E0B',
-    },
-  ];
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
         </View>
 
-        {/* Profile Info */}
         <View style={[styles.profileSection, { backgroundColor: colors.card }]}>
           <TouchableOpacity 
             style={styles.profileImageContainer}
@@ -212,14 +229,13 @@ const takePhoto = async () => {
                 <ActivityIndicator size="small" color={colors.primary} />
               </View>
             ) : (
-           <Image
-  source={user?.profileImage 
-    ? { uri: user.profileImage } 
-    : require('../../assets/images/profile.png')
-  }
-  style={styles.profileImage}
-  defaultSource={require('../../assets/images/profile.png')} 
-/>
+              <Image
+                source={user?.profileImage 
+                  ? { uri: user.profileImage } 
+                  : require('../../assets/images/profile.png')}
+                style={styles.profileImage}
+                defaultSource={require('../../assets/images/profile.png')} 
+              />
             )}
             <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
               <Edit3 size={12} color="#FFFFFF" />
@@ -241,7 +257,6 @@ const takePhoto = async () => {
           </TouchableOpacity>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsSection}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Travel Stats</Text>
           <View style={styles.statsGrid}>
@@ -257,7 +272,6 @@ const takePhoto = async () => {
           </View>
         </View>
 
-        {/* Menu Items */}
         <View style={styles.menuSection}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
           <View style={[styles.menuContainer, { backgroundColor: colors.card }]}>
@@ -266,7 +280,10 @@ const takePhoto = async () => {
                 key={item.id}
                 style={[
                   styles.menuItem,
-                  index !== menuItems.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: 1 }
+                  index !== menuItems.length - 1 && { 
+                    borderBottomColor: colors.border, 
+                    borderBottomWidth: 1 
+                  }
                 ]}
                 onPress={item.onPress}
               >
@@ -282,7 +299,6 @@ const takePhoto = async () => {
           </View>
         </View>
 
-        {/* Logout */}
         <View style={styles.logoutSection}>
           <TouchableOpacity
             style={[styles.logoutButton, { backgroundColor: '#EF4444' + '20' }]}
@@ -293,7 +309,6 @@ const takePhoto = async () => {
           </TouchableOpacity>
         </View>
 
-        {/* App Version */}
         <View style={styles.versionSection}>
           <Text style={[styles.versionText, { color: colors.textSecondary }]}>
             Voyageur v1.0.0

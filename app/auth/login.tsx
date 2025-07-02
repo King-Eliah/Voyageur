@@ -1,4 +1,5 @@
-import { useState } from 'react';
+// Login.tsx
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,37 +13,32 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
-  
+
   const router = useRouter();
-  const { login, loginWithGoogle, loginWithFacebook } = useAuth();
+  const { login, loginWithGoogle, isAuthenticated } = useAuth();
   const { colors } = useTheme();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated]);
 
   const validateForm = () => {
     const newErrors: {email?: string; password?: string} = {};
-    
-    if (!email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
+    if (!email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Please enter a valid email';
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleLogin = async () => {
     if (!validateForm()) return;
-    
     setLoading(true);
     try {
       await login(email, password);
-      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Login Failed', 'Invalid email or password');
     } finally {
@@ -53,43 +49,28 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
-      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Login Failed', 'Google login failed');
     }
   };
 
-  const handleFacebookLogin = async () => {
-    try {
-      await loginWithFacebook();
-      router.replace('/(tabs)');
-    } catch (error) {
-      Alert.alert('Login Failed', 'Facebook login failed');
-    }
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <ArrowLeft size={24} color={colors.text} />
       </TouchableOpacity>
-      
+
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.text }]}>Welcome Back</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Sign in to continue your journey
         </Text>
-        
+
         <View style={styles.form}>
+          {/* Email */}
           <View style={styles.inputContainer}>
             <TextInput
-              style={[
-                styles.input,
-                { backgroundColor: colors.inputBackground, color: colors.text, borderColor: errors.email ? '#EF4444' : colors.border }
-              ]}
+              style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: errors.email ? '#EF4444' : colors.border }]}
               placeholder="Email"
               placeholderTextColor={colors.textSecondary}
               value={email}
@@ -99,77 +80,45 @@ export default function Login() {
             />
             {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
-          
+
+          {/* Password */}
           <View style={styles.inputContainer}>
             <View style={styles.passwordContainer}>
               <TextInput
-                style={[
-                  styles.passwordInput,
-                  { backgroundColor: colors.inputBackground, color: colors.text, borderColor: errors.password ? '#EF4444' : colors.border }
-                ]}
+                style={[styles.passwordInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: errors.password ? '#EF4444' : colors.border }]}
                 placeholder="Password"
                 placeholderTextColor={colors.textSecondary}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
               />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff size={20} color={colors.textSecondary} />
-                ) : (
-                  <Eye size={20} color={colors.textSecondary} />
-                )}
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff size={20} color={colors.textSecondary} /> : <Eye size={20} color={colors.textSecondary} />}
               </TouchableOpacity>
             </View>
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
-          
-          <TouchableOpacity
-            style={styles.forgotButton}
-            onPress={() => router.push('/auth/forgot-password')}
-          >
+
+          <TouchableOpacity style={styles.forgotButton} onPress={() => router.push('/auth/forgot-password')}>
             <Text style={[styles.forgotText, { color: colors.primary }]}>Forgot Password?</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.loginButton, { backgroundColor: colors.primary }]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            )}
+
+          <TouchableOpacity style={[styles.loginButton, { backgroundColor: colors.primary }]} onPress={handleLogin} disabled={loading}>
+            {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.loginButtonText}>Sign In</Text>}
           </TouchableOpacity>
-          
+
           <View style={styles.divider}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or</Text>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
-          
-          <TouchableOpacity
-            style={[styles.socialButton, { borderColor: colors.border }]}
-            onPress={handleGoogleLogin}
-          >
+
+          <TouchableOpacity style={[styles.socialButton, { borderColor: colors.border }]} onPress={handleGoogleLogin}>
             <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Google</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.socialButton, { borderColor: colors.border }]}
-            onPress={handleFacebookLogin}
-          >
-            <Text style={[styles.socialButtonText, { color: colors.text }]}>Continue with Facebook</Text>
-          </TouchableOpacity>
-          
+
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-              Don't have an account?{' '}
-            </Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Don't have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/register')}>
               <Text style={[styles.footerLink, { color: colors.primary }]}>Sign Up</Text>
             </TouchableOpacity>

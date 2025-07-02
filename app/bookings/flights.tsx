@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   },
   planeIcon: {
     position: 'absolute',
-    top: -8,
+    top: -18,
   },
   flightFooter: {
     flexDirection: 'row',

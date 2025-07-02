@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { Platform } from 'react-native';
+import { Alert } from 'react-native';
 
 interface User {
   id: string;
@@ -11,6 +11,7 @@ interface User {
   profileImage?: string;
   countriesVisited: number;
   tripsCompleted: number;
+  visitedCountries: string[]; // Added to track specific countries
 }
 
 interface AuthContextType {
@@ -27,6 +28,8 @@ interface AuthContextType {
   uploadProfilePicture: (imageUri: string) => Promise<void>;
   pickImage: () => Promise<string | null>;
   takePhoto: () => Promise<string | null>;
+  incrementTripsCompleted: () => void;
+  addVisitedCountry: (country: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,13 +49,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const userData = await AsyncStorage.getItem('user');
       if (userData) {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        // Ensure visitedCountries exists
+        const userWithCountries = {
+          ...parsedUser,
+          visitedCountries: parsedUser.visitedCountries || []
+        };
+        setUser(userWithCountries);
         setIsAuthenticated(true);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const saveUserData = async (userData: User) => {
+    await AsyncStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  // Stats management functions
+  const incrementTripsCompleted = () => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        tripsCompleted: user.tripsCompleted + 1
+      };
+      saveUserData(updatedUser);
+    }
+  };
+
+  const addVisitedCountry = (country: string) => {
+    if (user && !user.visitedCountries.includes(country)) {
+      const updatedUser = {
+        ...user,
+        countriesVisited: user.countriesVisited + 1,
+        visitedCountries: [...user.visitedCountries, country]
+      };
+      saveUserData(updatedUser);
     }
   };
 
@@ -112,13 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const uploadProfilePicture = async (imageUri: string) => {
     try {
       setIsUploading(true);
-      
-      // In a real app, you would upload the image to your server here
-      // For demo purposes, we'll just store the local URI
       if (user) {
         const updatedUser = { ...user, profileImage: imageUri };
-        setUser(updatedUser);
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        saveUserData(updatedUser);
       }
     } catch (error) {
       console.error('Error uploading profile picture:', error);
@@ -143,11 +175,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileImage: undefined,
         countriesVisited: 12,
         tripsCompleted: 8,
+        visitedCountries: ['France', 'Italy', 'Japan', 'USA']
       };
       
-      setUser(userData);
+      saveUserData(userData);
       setIsAuthenticated(true);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
     } finally {
       setIsLoading(false);
     }
@@ -167,11 +199,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileImage: undefined,
         countriesVisited: 0,
         tripsCompleted: 0,
+        visitedCountries: []
       };
       
-      setUser(userData);
+      saveUserData(userData);
       setIsAuthenticated(true);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
     } finally {
       setIsLoading(false);
     }
@@ -191,11 +223,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileImage: undefined,
         countriesVisited: 5,
         tripsCompleted: 3,
+        visitedCountries: ['Canada', 'Mexico', 'Brazil']
       };
       
-      setUser(userData);
+      saveUserData(userData);
       setIsAuthenticated(true);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
     } finally {
       setIsLoading(false);
     }
@@ -215,11 +247,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileImage: undefined,
         countriesVisited: 3,
         tripsCompleted: 2,
+        visitedCountries: ['Germany', 'Spain']
       };
       
-      setUser(userData);
+      saveUserData(userData);
       setIsAuthenticated(true);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
     } finally {
       setIsLoading(false);
     }
@@ -241,8 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       if (user) {
         const updatedUser = { ...user, ...userData };
-        setUser(updatedUser);
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        saveUserData(updatedUser);
       }
     } finally {
       setIsLoading(false);
@@ -264,6 +295,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       uploadProfilePicture,
       pickImage,
       takePhoto,
+      incrementTripsCompleted,
+      addVisitedCountry
     }}>
       {children}
     </AuthContext.Provider>

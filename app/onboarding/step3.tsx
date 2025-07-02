@@ -17,7 +17,7 @@ export default function OnboardingStep3() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <Image
-           source={require('../../assets/images/onb3.png')}
+          source={require('../../assets/images/onb33.png')}
           style={styles.image}
         />
         <Text style={[styles.title, { color: colors.text }]}>Travel with Confidence</Text>
@@ -25,12 +25,14 @@ export default function OnboardingStep3() {
           Get real-time updates, access your bookings offline, and enjoy 24/7 support wherever you go
         </Text>
         
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: colors.primary }]}
-          onPress={handleGetStarted}
-        >
-          <Text style={styles.buttonText}>Get Started</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primary }]}
+            onPress={handleGetStarted}
+          >
+            <Text style={styles.buttonText}>Get Started</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       <View style={styles.pagination}>
@@ -51,10 +53,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingBottom: 60,
   },
   image: {
-    width: 200,
-    height: 200,
+    width: 320,
+    height: 320,
     borderRadius: 16,
     marginBottom: 40,
   },
@@ -70,10 +73,15 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     lineHeight: 24,
   },
+  buttonContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
   button: {
-    paddingHorizontal: 32,
+    width: '100%',
     paddingVertical: 16,
     borderRadius: 25,
+    alignItems: 'center',
   },
   buttonText: {
     color: '#FFFFFF',

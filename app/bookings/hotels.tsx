@@ -1,16 +1,34 @@
 import { useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Alert, Modal } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useData } from '@/contexts/DataContext';
+import { useData } from '@/contexts/DataContext'; // Added useData
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Search, Filter, Star, MapPin, Wifi, Car, Coffee, Dumbbell, Heart, Calendar, Clock, Users, ChevronLeft, ChevronRight, Plus, Minus } from 'lucide-react-native';
+import { 
+  ArrowLeft, 
+  Search, 
+  Filter, 
+  Star, 
+  MapPin, 
+  Wifi, 
+  Car, 
+  Coffee, 
+  Dumbbell, 
+  Heart, 
+  Calendar, 
+  Clock, 
+  Users, 
+  ChevronLeft, 
+  ChevronRight, 
+  Plus, 
+  Minus 
+} from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
 
 export default function HotelsScreen() {
   const { colors } = useTheme();
-  const { addBooking } = useData();
+  const { addBooking, addSavedItem, removeSavedItem, isItemSaved } = useData(); // Added favorites functions
   const router = useRouter();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,7 +45,7 @@ export default function HotelsScreen() {
 
   const hotels = [
     {
-      id: '1',
+      id: 'hotel-1',
       name: 'Grand Palace Hotel',
       location: 'Downtown, Paris',
       image: 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -46,7 +64,7 @@ export default function HotelsScreen() {
       roomType: 'Deluxe Suite',
     },
     {
-      id: '2',
+      id: 'hotel-2',
       name: 'Seaside Resort & Spa',
       location: 'Beachfront, Santorini',
       image: 'https://images.pexels.com/photos/261102/pexels-photo-261102.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -65,7 +83,7 @@ export default function HotelsScreen() {
       roomType: 'Ocean View Villa',
     },
     {
-      id: '3',
+      id: 'hotel-3',
       name: 'Mountain View Lodge',
       location: 'Swiss Alps, Switzerland',
       image: 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -84,7 +102,7 @@ export default function HotelsScreen() {
       roomType: 'Mountain Cabin',
     },
     {
-      id: '4',
+      id: 'hotel-4',
       name: 'Urban Boutique Hotel',
       location: 'City Center, Tokyo',
       image: 'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -103,7 +121,7 @@ export default function HotelsScreen() {
       roomType: 'Business Suite',
     },
     {
-      id: '5',
+      id: 'hotel-5',
       name: 'Desert Oasis Resort',
       location: 'Dubai, UAE',
       image: 'https://images.pexels.com/photos/1134176/pexels-photo-1134176.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -237,6 +255,25 @@ export default function HotelsScreen() {
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to book hotel. Please try again.');
+    }
+  };
+
+  // Added favorite toggle function
+  const handleToggleFavorite = async (hotel: any) => {
+    const savedItem = {
+      id: hotel.id,
+      type: 'hotel' as const,
+      title: hotel.name,
+      location: hotel.location,
+      image: hotel.image,
+      rating: hotel.rating,
+      price: hotel.price
+    };
+
+    if (isItemSaved(hotel.id)) {
+      await removeSavedItem(hotel.id);
+    } else {
+      await addSavedItem(savedItem);
     }
   };
 
@@ -427,8 +464,16 @@ const renderHotelCard = (hotel) => {
           </View>
         )}
 
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Heart size={16} color="white" />
+        {/* Updated favorite button */}
+        <TouchableOpacity 
+          style={styles.favoriteButton}
+          onPress={() => handleToggleFavorite(hotel)}
+        >
+          <Heart 
+            size={16} 
+            color={isItemSaved(hotel.id) ? '#EF4444' : 'white'} 
+            fill={isItemSaved(hotel.id) ? '#EF4444' : 'transparent'}
+          />
         </TouchableOpacity>
       </View>
 

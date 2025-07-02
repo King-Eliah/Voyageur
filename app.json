@@ -4,9 +4,9 @@
     "slug": "trip-planner-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon":"./assets/images/logo.png",
+    "icon": "./assets/images/logo.png",
     "splash": {
-      "image":"./assets/images/logo.png"
+      "image": "./assets/images/logo.png"
     },
     "scheme": "tripplanner",
     "userInterfaceStyle": "automatic",
@@ -34,6 +34,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "redirectUri": "tripplanner:/oauthredirect"
     }
   }
 }

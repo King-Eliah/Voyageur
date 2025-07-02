@@ -49,6 +49,7 @@ interface DataContextType {
   addSavedItem: (item: SavedItem) => Promise<void>;
   removeSavedItem: (id: string) => Promise<void>;
   isItemSaved: (id: string) => boolean;
+  clearSavedItems: () => Promise<void>; // Added clear function
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -57,10 +58,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false); // Track loading state
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Save data whenever it changes
+  useEffect(() => {
+    if (isLoaded) {
+      saveData();
+    }
+  }, [trips, bookings, savedItems]);
 
   const loadData = async () => {
     try {
@@ -73,8 +82,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (tripsData) setTrips(JSON.parse(tripsData));
       if (bookingsData) setBookings(JSON.parse(bookingsData));
       if (savedItemsData) setSavedItems(JSON.parse(savedItemsData));
+      
+      setIsLoaded(true);
     } catch (error) {
       console.error('Error loading data:', error);
+      setIsLoaded(true);
+    }
+  };
+
+  const saveData = async () => {
+    try {
+      await Promise.all([
+        AsyncStorage.setItem('trips', JSON.stringify(trips)),
+        AsyncStorage.setItem('bookings', JSON.stringify(bookings)),
+        AsyncStorage.setItem('savedItems', JSON.stringify(savedItems)),
+      ]);
+    } catch (error) {
+      console.error('Error saving data:', error);
     }
   };
 
@@ -83,24 +107,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ...trip,
       id: Date.now().toString(),
     };
-    
-    const updatedTrips = [...trips, newTrip];
-    setTrips(updatedTrips);
-    await AsyncStorage.setItem('trips', JSON.stringify(updatedTrips));
+    setTrips(prev => [...prev, newTrip]);
   };
 
   const updateTrip = async (id: string, tripData: Partial<Trip>) => {
-    const updatedTrips = trips.map(trip =>
-      trip.id === id ? { ...trip, ...tripData } : trip
+    setTrips(prev => 
+      prev.map(trip => trip.id === id ? { ...trip, ...tripData } : trip)
     );
-    setTrips(updatedTrips);
-    await AsyncStorage.setItem('trips', JSON.stringify(updatedTrips));
   };
 
   const deleteTrip = async (id: string) => {
-    const updatedTrips = trips.filter(trip => trip.id !== id);
-    setTrips(updatedTrips);
-    await AsyncStorage.setItem('trips', JSON.stringify(updatedTrips));
+    setTrips(prev => prev.filter(trip => trip.id !== id));
   };
 
   const addBooking = async (booking: Omit<Booking, 'id'>) => {
@@ -108,35 +125,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ...booking,
       id: Date.now().toString(),
     };
-    
-    const updatedBookings = [...bookings, newBooking];
-    setBookings(updatedBookings);
-    await AsyncStorage.setItem('bookings', JSON.stringify(updatedBookings));
+    setBookings(prev => [...prev, newBooking]);
   };
 
   const updateBooking = async (id: string, bookingData: Partial<Booking>) => {
-    const updatedBookings = bookings.map(booking =>
-      booking.id === id ? { ...booking, ...bookingData } : booking
+    setBookings(prev => 
+      prev.map(booking => 
+        booking.id === id ? { ...booking, ...bookingData } : booking
+      )
     );
-    setBookings(updatedBookings);
-    await AsyncStorage.setItem('bookings', JSON.stringify(updatedBookings));
   };
 
   const addSavedItem = async (item: SavedItem) => {
-    const updatedSavedItems = [...savedItems, item];
-    setSavedItems(updatedSavedItems);
-    await AsyncStorage.setItem('savedItems', JSON.stringify(updatedSavedItems));
+    // Prevent duplicates
+    if (!savedItems.some(savedItem => savedItem.id === item.id)) {
+      setSavedItems(prev => [...prev, item]);
+    }
   };
 
   const removeSavedItem = async (id: string) => {
-    const updatedSavedItems = savedItems.filter(item => item.id !== id);
-    setSavedItems(updatedSavedItems);
-    await AsyncStorage.setItem('savedItems', JSON.stringify(updatedSavedItems));
+    setSavedItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const clearSavedItems = async () => {
+    setSavedItems([]);
   };
 
   const isItemSaved = (id: string) => {
     return savedItems.some(item => item.id === id);
-  
   };
 
   return (
@@ -152,6 +168,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addSavedItem,
       removeSavedItem,
       isItemSaved,
+      clearSavedItems, // Added clear function
     }}>
       {children}
     </DataContext.Provider>

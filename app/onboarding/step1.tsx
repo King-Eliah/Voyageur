@@ -11,7 +11,7 @@ export default function OnboardingStep1() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <Image
-          source={require('../../assets/images/onb2.png')} 
+          source={require('../../assets/images/onb44.png')} 
           style={styles.image}
         />
         <Text style={[styles.title, { color: colors.text }]}>Plan Your Perfect Trip</Text>
@@ -54,10 +54,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingBottom: 60,
   },
   image: {
-    width: 200,
-    height: 200,
+    width: 320,
+    height: 320,
     borderRadius: 16,
     marginBottom: 40,
   },
@@ -74,12 +75,14 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   buttonContainer: {
+    width: '100%',
     alignItems: 'center',
   },
   button: {
-    paddingHorizontal: 32,
+    width: '100%',
     paddingVertical: 16,
     borderRadius: 25,
+    alignItems: 'center',
     marginBottom: 16,
   },
   buttonText: {

@@ -3,7 +3,7 @@ import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Image, Alert, Tex
 import { useTheme } from '@/contexts/ThemeContext';
 import { useData } from '@/contexts/DataContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Calendar, MapPin, Clock, Edit3, Share, Trash2, ChevronLeft, Search, Filter, X, Save, Camera, ImageIcon, Upload } from 'lucide-react-native';
+import { Plus, Calendar, MapPin, Clock, Edit3, Share, Trash2, ChevronLeft, Search, Filter, X, Save, Camera, ImageIcon, Upload,Star } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import ItineraryModal from '../modal/itinerary-modal';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -20,6 +20,22 @@ interface Trip {
   status: string;
   createdAt?: string;
   updatedAt?: string;
+  // Add these new fields for reviews
+  review?: {
+    rating: number;
+    text: string;
+    images: string[];
+    createdAt: string;
+  };
+  // Add location details for better review context
+  locationDetails?: {
+    country: string;
+    city: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
 }
 
 export default function TripsScreen() {
@@ -107,20 +123,19 @@ export default function TripsScreen() {
   };
 
   const handleSaveTrip = () => {
-    if (!editingTrip || !tempTrip.title || !tempTrip.destination) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
+  if (!editingTrip || !tempTrip.title || !tempTrip.destination) {
+    Alert.alert('Error', 'Please fill in all required fields');
+    return;
+  }
 
-    const updatedTrip = {
-      ...editingTrip,
-      ...tempTrip,
-      updatedAt: new Date().toISOString(),
-    };
+  const wasCompleted = editingTrip.status === 'completed';
+  const isNowCompleted = tempTrip.status === 'completed';
+  const statusChangedToCompleted = !wasCompleted && isNowCompleted;
 
-    updateTrip(editingTrip.id, updatedTrip);
-    setShowEditModal(false);
-    setEditingTrip(null);
+  const updatedTrip = {
+    ...editingTrip,
+    ...tempTrip,
+    updatedAt: new Date().toISOString(),
   };
 
   const handleDateChange = (date: Date | undefined, field: 'start' | 'end') => {
@@ -134,7 +149,7 @@ export default function TripsScreen() {
     
     setDateModalVisible(false);
   };
-
+  }
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -505,23 +520,23 @@ export default function TripsScreen() {
     </View>
   );
 
-  const renderTripCard = (trip: Trip) => (
-    <TouchableOpacity
-      key={trip.id}
-      style={[styles.tripCard, { backgroundColor: colors.card }]}
-      onPress={() => router.push({
-        pathname: '/bookings/detail',
-        params: {
-          id: trip.id,
-          title: trip.title,
-          destination: trip.destination,
-          image: trip.image,
-          startDate: trip.startDate,
-          endDate: trip.endDate,
-          type: 'trip'
-        }
-      })}
-    >
+ const renderTripCard = (trip: Trip) => (
+  <TouchableOpacity
+    key={trip.id}
+    style={[styles.tripCard, { backgroundColor: colors.card }]}
+    onPress={() => router.push({
+      pathname: '/bookings/detail',
+      params: {
+        id: trip.id,
+        title: trip.title,
+        destination: trip.destination,
+        image: trip.image,
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        type: 'trip'
+      }
+    })}
+  >
       <Image source={{ uri: trip.image }} style={styles.tripImage} />
       <View style={styles.tripContent}>
         <View style={styles.tripHeader}>
@@ -552,31 +567,41 @@ export default function TripsScreen() {
           </Text>
         )}
 
-        <View style={styles.tripActions}>
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primary + '20' }]}
-            onPress={() => openEditModal(trip)}
-          >
-            <Edit3 size={16} color={colors.primary} />
-            <Text style={[styles.actionText, { color: colors.primary }]}>Edit</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.textSecondary + '20' }]}
-            onPress={() => handleShareTrip(trip)}
-          >
-            <Share size={16} color={colors.textSecondary} />
-            <Text style={[styles.actionText, { color: colors.textSecondary }]}>Share</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: '#EF4444' + '20' }]}
-            onPress={() => handleDeleteTrip(trip.id, trip.title)}
-          >
-            <Trash2 size={16} color="#EF4444" />
-            <Text style={[styles.actionText, { color: '#EF4444' }]}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={styles.tripActions}>
+  {trip.status === 'completed' && !trip.review && (
+    <TouchableOpacity
+      style={[styles.actionButton, { backgroundColor: '#F59E0B' + '20' }]}
+      onPress={() => router.push(`/add-review?id=${trip.id}`)}
+    >
+      <Star size={16} color="#F59E0B" />
+      <Text style={[styles.actionText, { color: '#F59E0B' }]}>Review</Text>
+    </TouchableOpacity>
+  )}
+
+  <TouchableOpacity
+    style={[styles.actionButton, { backgroundColor: colors.primary + '20' }]}
+    onPress={() => openEditModal(trip)}
+  >
+    <Edit3 size={16} color={colors.primary} />
+    <Text style={[styles.actionText, { color: colors.primary }]}>Edit</Text>
+  </TouchableOpacity>
+  
+  <TouchableOpacity
+    style={[styles.actionButton, { backgroundColor: colors.textSecondary + '20' }]}
+    onPress={() => handleShareTrip(trip)}
+  >
+    <Share size={16} color={colors.textSecondary} />
+    <Text style={[styles.actionText, { color: colors.textSecondary }]}>Share</Text>
+  </TouchableOpacity>
+  
+  <TouchableOpacity
+    style={[styles.actionButton, { backgroundColor: '#EF4444' + '20' }]}
+    onPress={() => handleDeleteTrip(trip.id, trip.title)}
+  >
+    <Trash2 size={16} color="#EF4444" />
+    <Text style={[styles.actionText, { color: '#EF4444' }]}>Delete</Text>
+  </TouchableOpacity>
+</View>
       </View>
     </TouchableOpacity>
   );
@@ -1421,8 +1446,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dateModalButtonText: {
+   dateModalButtonText: {
     fontSize: 16,
     fontWeight: '600',
   },
-});
+});  
